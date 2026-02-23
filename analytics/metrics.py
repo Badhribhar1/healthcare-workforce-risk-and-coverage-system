@@ -2,7 +2,6 @@ import pandas as pd
 from etl.data_upload import get_connection
 
 def get_overtime_by_staff():
-    # Calculates the overtime hours and percentage of overtime for each staff member
     query = """
     SELECT 
         staff_id,
@@ -22,9 +21,7 @@ def get_overtime_by_staff():
     return df
 
 
-
 def get_patient_to_staff_ratio():
-    # Calculates the patient-to-staff ratio for each unit and shift date
     query = """
     SELECT
         c.unit,
@@ -40,7 +37,7 @@ def get_patient_to_staff_ratio():
     LEFT JOIN shifts s
         ON c.unit = s.unit
         AND c.date = s.shift_date
-        AND s.status = 'Completed'
+        AND s.status = 'scheduled'
     GROUP BY
         c.unit,
         c.date,
@@ -54,7 +51,6 @@ def get_patient_to_staff_ratio():
 
 
 def get_weekly_capacity_utilization():
-    # Calculates the total hours worked, max hours allowed, and percentage of capacity utilized for each staff member by week
     query = """
     SELECT
         t.staff_id,
@@ -85,7 +81,6 @@ def get_weekly_capacity_utilization():
 
 
 def get_cancellation_rate_by_unit():
-    # Calculates the number of cancelled shifts, total shifts, and cancellation rate percentage for each unit
     query = """
     SELECT
         unit,
@@ -106,9 +101,7 @@ def get_cancellation_rate_by_unit():
     return df
 
 
-
 def get_average_shift_duration():
-    # Calculatres the average shift duration in hours for each staff member, considering only completed shifts
     query = """
     SELECT
         staff_id,
@@ -127,15 +120,13 @@ def get_average_shift_duration():
     return df
 
 
-
 def get_total_days_worked():
-    # Calculates the total number of unique days worked for each staff member, considering only completed shifts
     query = """
     SELECT
         staff_id,
         COUNT(DISTINCT shift_date) AS total_days_worked
     FROM shifts
-    WHERE status = 'Completed'
+    WHERE status = 'scheduled'
     GROUP BY staff_id
     ORDER BY total_days_worked DESC;
     """
@@ -143,3 +134,31 @@ def get_total_days_worked():
     df = pd.read_sql(query, conn)
     conn.close()
     return df
+
+
+if __name__ == "__main__":
+    print("Testing queries...\n")
+
+    df1 = get_overtime_by_staff()
+    print("Overtime by Staff:")
+    print(df1.head(), "\n")
+
+    df2 = get_patient_to_staff_ratio()
+    print("Patient to Staff Ratio:")
+    print(df2.head(), "\n")
+
+    df3 = get_weekly_capacity_utilization()
+    print("Capacity Utilization:")
+    print(df3.head(), "\n")
+
+    df4 = get_cancellation_rate_by_unit()
+    print("Cancellation Rate:")
+    print(df4.head(), "\n")
+
+    df5 = get_average_shift_duration()
+    print("Average Shift Duration:")
+    print(df5.head(), "\n")
+
+    df6 = get_total_days_worked()
+    print("Total Days Worked:")
+    print(df6.head(), "\n")
