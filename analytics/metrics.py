@@ -135,30 +135,65 @@ def get_total_days_worked():
     conn.close()
     return df
 
+def classify_risk(score):
+    if score >= 0.75:
+        return "High"
+    elif score >= 0.5:
+        return "Moderate"
+    else:
+        return "Low"
+
+def build_staff_risk_profile():
+    overtime_df = get_overtime_by_staff()
+    capacity_df = get_weekly_capacity_utilization()
+    days_df = get_total_days_worked()
+    duration_df = get_average_shift_duration()  
+    df = capacity_df.merge(overtime_df, on="staff_id", how="inner")
+    df = df.merge(days_df, on="staff_id", how="inner")
+    df = df.merge(duration_df, on="staff_id", how="inner")
+    df = df.drop(columns=["total_hours_worked_y"])
+    df = df.rename(columns={"total_hours_worked_x": "total_hours_worked"})
+    df["overtime_norm"] = df["overtime_percentage"] / 100
+    df["capacity_norm"] = df["percent_of_allowed_capacity"] / 100
+    df["days_norm"] = df["total_days_worked"] / df["total_days_worked"].max()
+    df["shift_norm"] = df["avg_shift_duration_hours"] / df["avg_shift_duration_hours"].max()
+
+    df["risk_score"] = (
+    0.35 * df["overtime_norm"] +
+    0.30 * df["capacity_norm"] +
+    0.10 * df["days_norm"] +
+    0.05 * df["shift_norm"]
+    )
+    df["risk_level"] = df["risk_score"].apply(classify_risk)
+    df = df.sort_values("risk_score", ascending=False)
+    return(df)
 
 if __name__ == "__main__":
-    print("Testing queries...\n")
+    # print("Testing queries...\n")
 
-    df1 = get_overtime_by_staff()
-    print("Overtime by Staff:")
-    print(df1.head(), "\n")
+    # df1 = get_overtime_by_staff()
+    # print("Overtime by Staff:")
+    # print(df1.head(), "\n")
 
-    df2 = get_patient_to_staff_ratio()
-    print("Patient to Staff Ratio:")
-    print(df2.head(), "\n")
+    # df2 = get_patient_to_staff_ratio()
+    # print("Patient to Staff Ratio:")
+    # print(df2.head(), "\n")
 
-    df3 = get_weekly_capacity_utilization()
-    print("Capacity Utilization:")
-    print(df3.head(), "\n")
+    # df3 = get_weekly_capacity_utilization()
+    # print("Capacity Utilization:")
+    # print(df3.head(), "\n")
 
-    df4 = get_cancellation_rate_by_unit()
-    print("Cancellation Rate:")
-    print(df4.head(), "\n")
+    # df4 = get_cancellation_rate_by_unit()
+    # print("Cancellation Rate:")
+    # print(df4.head(), "\n")
 
-    df5 = get_average_shift_duration()
-    print("Average Shift Duration:")
-    print(df5.head(), "\n")
+    # df5 = get_average_shift_duration()
+    # print("Average Shift Duration:")
+    # print(df5.head(), "\n")
 
-    df6 = get_total_days_worked()
-    print("Total Days Worked:")
-    print(df6.head(), "\n")
+    # df6 = get_total_days_worked()
+    # print("Total Days Worked:")
+    # print(df6.head(), "\n")
+
+    df = build_staff_risk_profile()
+    print(df.head(10))
